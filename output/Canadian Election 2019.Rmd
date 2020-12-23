@@ -1,5 +1,6 @@
 ---
 title: "Towards a Estimation of Supporting Rate for Liberal Party"
+subtitle: "Under the assumption all eligible Canadians participated in 2019 Election"
 author: "Zhixing Hong"
 date: "12/15/2020"
 output:
@@ -240,6 +241,8 @@ x$byClass%>%kable(caption = "Result of Confusion Matrix")
 - Kennedy, L., Khanna, K., Simpson, D., &amp; Gelman, A. (2020). Using sex and gender in survey adjustment. doi:arXiv:2009.14401
 
 - Safiya Umoja Noble. Algorithms of Oppression: How Search Engines Reinforce Racism. NYU Press, 2018.
+
+- Election polling. (n.d.). Retrieved December 23, 2020, from https://www.pewresearch.org/methods/u-s-survey-research/election-polling/
 
 - R Core Team (2020). R: A language and environment for statistical computing. R Foundation for
   Statistical Computing, Vienna, Austria. URL https://www.R-project.org/.
