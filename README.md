@@ -14,5 +14,5 @@ Outputs is the folder where the modified data, report and other supporting file 
 - Candian Election 2019.rmd
 
 Scripts contains R scripts that takes inputs and produced the outputs. They are:
--gss_cleaning.R
--sample_cleaning.R
+- gss_cleaning.R
+- sample_cleaning.R

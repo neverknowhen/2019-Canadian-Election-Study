@@ -17,11 +17,11 @@ The purpose of this paper is to build and train a logistic regression model to c
 
 # Introduction
 
-  The supporting rate for each party, companies and even individuals is extremely important during the election period. Building a logistic regression model with post-stratification is a popular for people to conduct analysis on the supporting rate for each parties. With the post stratification technique, the estimated result could be applied to the census scale without too much data required. 
+   Not only play an important role in helping the journalists and citizens understand the meaning of the campaign and the election, but election polls also overhang for their ability to predict the supporting rate for different parties and their winning rate. As the election survey cannot cover the whole population, a statistical method is required for stimulating the result for the entire population. The post-stratification is useful in a dual-frame survey, as we need to connect the election survey with the census data. The dual frame survey was first studied by Hartley (1962, 1974) based on post-stratified samples under the following classic setting. The same setting was also used by Fuller and Burmeister (1972), Skinner and Rao (1996), Lohr and Rao (2000, 2006), and Rao and Wu (2010b), among others. [Wu & Thompson, 2020]
   
-  During the 2019 Canadian Election, Liberal Party did win for the final seat. However, the supporting rate for the Liberal Party was lower than the Conservative Party. Nevertheless, comparing to the 2015 Canadian election, the supporting rate for the Liberal Party also decreased. The reasons behind this might be complicated as it involving different aspects. While the importance of predicting the supporting rate for the Liberal Party were shown. Therefore, this study is focusing on estimating the supporting rate for the Liberal Party during the 2019 Canada Election, assuming all the eligible Canadian participated in.
+  During the 2019 Canadian Election, Liberal Party did win the final seat. However, the supporting rate for the Liberal Party was lower than the Conservative Party. Nevertheless, compared to the 2015 Canadian election, the supporting rate for the Liberal Party also decreased. The reasons behind this might be complicated as involving multiple aspects. The importance of predicting the supporting rate for the Liberal Party was shown. Analyzing the survey data from the campaign period and connecting it with census data could help to estimate the supporting rate for the Liberal Party. Therefore, this study is focusing on estimating the supporting rate for the Liberal Party during the 2019 Canada Election, assuming all the eligible Canadian participated.
   
-  There are two different datasets used in the paper to build the logistic regression model. The trained logistic regression model is then used for calculating the supporting rate of Liberal Party in 2019 Canadian Election. In the Methodology section (Section 2), the details about the data, the logistic regression model and post stratification are discussed. In the result section (Section 3), I discussed the supporting rate of 2019 Liberal Party obtained by the model. For the inference of the data and potential improvement for the model is mention in the Discussion Section(Section 4.) 
+  There are two different datasets used in the paper to build the logistic regression model. The trained logistic regression model is then used for calculating the supporting rate of the Liberal Party in the 2019 Canadian Election. In the Methodology section (Section 2), the details about the data, the logistic regression model and post-stratification are discussed. In the result section (Section 3), I discussed the supporting rate of the 2019 Liberal Party obtained by the model. The inference of the data and potential improvement for the model is mention in the Discussion Section(Section 4.)
 
 ```{r setup, include=FALSE}
 set.seed(1004882718)
@@ -37,13 +37,13 @@ library(ggpubr)
 
 # Loading in the cleaned survey data
 
-survey_data <- read_csv("~/Desktop/final_project//2019-Canadian-Election-Study/output/cleaned_online_data.csv")
+survey_data <- read_csv("~/Desktop/final_project/2019-Canadian-Election-Study/output/cleaned_online_data.csv")
 
 # Loading in the cleaned census data
 census_detailed_data <- read_csv("~/Desktop/final_project/2019-Canadian-Election-Study/output/cleaned_gss_data.csv")
 
 # Loading in the cell census data
-census_data <- read_csv("~/Desktop/final_project//2019-Canadian-Election-Study/output/census_cell_data.csv")
+census_data <- read_csv("~/Desktop/final_project/2019-Canadian-Election-Study/output/census_cell_data.csv")
 ```
 
 
@@ -55,20 +55,20 @@ census_data <- read_csv("~/Desktop/final_project//2019-Canadian-Election-Study/o
 
   There are two different datasets are used in the paper. 
 
-  The survey dataset, is a dataset obtained by Canadian Election Study (Short as CES) during the election campaign period time. 37822 respondents took the survey between September 13th to October 21st, 2019. The daily sample size is approximately 800 to 850 people; while the lase five days, there are a huge increase in the daily sample size, around 1600 respondent in average, per day. The survey is distributed online, and due to the design of the questionnaire, respondents are able to answer certain questions based on the choice for specific questions. There are 620 variables in the raw dataset, including some basic information about the respondent, the respondent's opinion and thought about political issues, and the respondent's vote decision. In order to make the prediction of the support rate for the Liberal Party when all eligible voter had been voted, I select some of the variables and clean those variables. 
+  The survey dataset is a dataset obtained by Canadian Election Study (Short as CES) during the election campaign period time. 37822 respondents took the survey between September 13th to October 21st, 2019. The daily sample size is approximately 800 to 850 people; while the lase five days, there is a huge increase in the daily sample size, around 1600 respondent on average, per day. The survey is distributed online, and due to the design of the questionnaire, respondents are able to answer certain questions based on the choice for specific questions. There are 620 variables in the raw dataset, including some basic information about the respondent, the respondent's opinion and thought about political issues and the respondent's vote decision. In order to make the prediction of the support rate for the Liberal Party when all eligible voters had been voted, I select some of the variables and clean those variables. 
 
-  For the data used to representing the census, data from 2017 General Social Study (Short as GSS) is reformatted and cleaned. The 2017 GSS is a sample survey with cross-sectional design. The target population are all non-institutionalized persons 15 years of age and older, living in the 10 provinces of Canada. The GSS conducted by telephone surveys to collect the response from people all over Canada. There are 460 questions included in the survey, which could be classified into 14 different categories. That includes the entry component, family origins, conjugal history, children of respondents, and so on. The variables that I select are similar to the variables selected from the survey dataset.
+  For the data used to represent the census, data from the 2017 General Social Study (Short as GSS) is reformatted and cleaned. The 2017 GSS is a sample survey with a cross-sectional design. The target population is all non-institutionalized persons 15 years of age and older, living in the 10 provinces of Canada. The GSS was conducted by telephone surveys to collect the response from people all over Canada. There are 460 questions included in the survey, which could be classified into 14 different categories. That includes the entry component, family origins, conjugal history, children of respondents, and so on. The variables that I select are similar to the variables selected from the survey dataset.
   
   
 ### Data Cleaning and Data Preparation
-  The variables selected are: `province`, `gender`, `age`, `education`, `household_size`, `impoartance of religion`, `marital status`, and one more variable `vote_combine` from the sample data is also included. All the variables, except the `vote_choice`, are used as the predictor for the logistic regression model.
+  The variables selected are: `province`, `gender`, `age`, `education`, `household_size`, `importance of religion`, `marital status`, and one more variable `vote_combine` from the sample data is also included. All the variables, except the `vote_choice`, are used as the predictor for the logistic regression model.
   
    
-   As the variable `province`, in the sample and census data indicates the living place of the respondents, I left the variable unchanged. In both datasets, I select the respondents at 18 years old or older, since the qualified voters in the Canadian Election must older or at 18 years old. After select the qualified voters, I create `age group` to replace `age`. This variable divides people into age groups which have similar characteristics and are more significant for the model. For each small age group, the difference between the upper bound and the lower bound is 5 years. In the CES data, `gender` is included, while `sex` is used in the GSS data. As suggested by Kennedy that there is difference between the definition with `sex` and `gender`, ignoring the difference is algorithmic injustice. Therefore, followed the sociological perspective, I combine the variable level `a woman` and `Other (e.g. Trans, non-binary, two-spirit, gender-queer)` together in the survey data. Then I renamed the predictor as `sex`. For the variable `education`, it originally had 12 levels in survey data set and 8 levels in the census data. To match this categorical variable, I combined several groups. The final `education` takes 6 levels. The `religion` is also an important feature for people to making voting choice during the election. Due the limitation of the datasets, I chose the `religion_importance` as the predictor variable. `Maritual status` in the survey data is keep same as given. I reformatted that predictor in the `census data`, which could be paired with the survey data. 
+   As the variable `province`, in the sample and census data indicates the living place of the respondents, I left the variable unchanged. In both datasets, I select the respondents at 18 years old or older, since the qualified voters in the Canadian Election must older or at 18 years old. After selecting the qualified voters, I create `age group` to replace `age`. This variable divides people into age groups that have similar characteristics and are more significant for the model. For each small age group, the difference between the upper bound and the lower bound is 5 years. In the CES data, `gender` is included, while `sex` is used in the GSS data. As suggested by Kennedy that there is a difference between the definition of `sex` and `gender`, ignoring the difference is algorithmic injustice. [Kennedy, Khanna, Simpson & Gelman, 2020] Therefore, followed the sociological perspective, I combine the variable level `a woman` and `Other (e.g. Trans, non-binary, two-spirit, genderqueer)` together in the survey data. Then I renamed the predictor as `sex`. For the variable `education`, it originally had 12 levels in the survey data set and 8 levels in the census data. To match this categorical variable, I combined several groups. The final `education` takes 6 levels. The `religion` is also an important feature for people in making voting choices during the election. Due to the limitation of the datasets, I chose the `religion_importance` as the predictor variable. `Marital status` in the survey data is kept the same as given. I reformatted that predictor in the `census data`, which could be paired with the survey data. 
    
-   As voting process have different stages during the 2019 Canadian Election, the vote choice in the survey data is not contained in the same variable. As there are people who voted in advance, people who willing and likely to vote during the voting period and also there are people who expressed that 'will not vote or not willing to vote'. Therefore, to have a variable that combining all different people's voting choice is crucial. Hence, `vote_combine` combined all the voting choice for all the respondents who took the survey. As the goal of the paper is to simulating the real supporting rate for Liberal PArty, if every eligible voter voted during the 2019 election, I add one more variable `vote_liberal`. This is a binary variable that demonstates whether the people voted for Liberal Party during the Advance voting, or the respondent had the intension to vote for Liberal Party.
+   As the voting process has different stages during the 2019 Canadian Election, the vote choice in the survey data is not contained in the same variable. As there are people who voted in advance, people who willing and likely to vote during the voting period and also there are people who expressed that they 'will not vote or not willing to vote'. Therefore, to have a variable that combining all different people's voting choices is crucial. Hence, `vote_combine` combined all the voting choices for all the respondents who took the survey. As the goal of the paper is to simulate the real supporting rate for Liberal PArty, if every eligible voter voted during the 2019 election, I add one more variable `vote_liberal`. This is a binary variable that demonstrates whether the people voted for the Liberal Party during the Advance voting, or the respondent had the intention to vote for the Liberal Party.
    
-   Here is the overview for the two datasets. The detailed information for the two datasets is in Appendix A.
+   Here is the overview of the two datasets. The detailed information for the two datasets is in Appendix A.
    
 ```{r echo=FALSE}
 head(census_detailed_data)%>%
@@ -84,10 +84,10 @@ head(survey_data)%>%
 
 ### Strength and Limitation for the Survey and Data
 
-  There are several strength for the survey data and census. First, the GSS survey took stratification as its sampling method. Based on the province information, the data is divided into strata, providing an unbiased sample. For the CES data, the dataset provided user several efficient way to remove the non-response problem. As the CES was conducting by online survey, there is time recorded for the respondent as they opened the survey and finished survey. Based on the time given, I am notified with the inattentive respondents and speeders.
+  There are several strengths for the survey data and census. First, the GSS survey took stratification as its sampling method. Based on the province information, the data is divided into strata, providing an unbiased sample. For the CES data, the dataset provided users with several efficient ways to remove the non-response problem. As the CES was conducted by an online survey, there is the time recorded for the respondent as they opened the survey and finished the survey. Based on the time given, I am notified by the inattentive respondents and speeders.
   
   
-  For the GSS, there are many missing values in the data were imputed as “Not Stated” or “Don't Know”. While the assumption under which these imputations were conducted was probably reasonable, it may be able to adding more useful and important information to the census data. Moreover, the sample size for this survey is relatively small comparing to the survey dataset. Therefore we have to use `weight_person` to estimate the number of people fall in this category, which `weight_person` was calcutaed based on the census data on 2016 Canada Census. What is also worth to mentioning is that, CES was conducted online. Therefore, this makes an bias on the sample. All the respondents were defaulted to be the ones who had the access to the internet and who were able to finish the survey through computer.
+  For the GSS, many missing values in the data were imputed as “Not Stated” or “Don't Know”. While the assumption under which these imputations were conducted was probably reasonable, it may be able to add more useful and important information to the census data. Moreover, the sample size for this survey is relatively small comparing to the survey dataset. Therefore we have to use `weight_person` to estimate the number of people who fall in this category, which `weight_person` was calculated based on the census data on 2016 Canada Census. What is also worth mentioning is that CES was conducted online. Therefore, this makes a bias in the sample. All the respondents were defaulted to be the ones who had the access to the internet and who were able to finish the survey through the computer.
 
 
 ## Model
@@ -107,11 +107,12 @@ N <- 18350359
 
 ### Model Specifies
 
-  A logistic quasi-binomial regression model is employed to predict the supporting rate for the Liberal Party in 2019 Canadian Election, when all eligible Canadian voted.
+  A logistic quasi-binomial regression model is employed to predict the supporting rate for the Liberal Party in the 2019 Canadian Election when all eligible Canadian voted. 
 
-  As `survey data` is obtained from the survey conducted by CES, the sampling method of the survey has been taken into consideration. This is beneficial to reduce the errors to avoid inaccurate result when raining the logistic regression model. The finite population is specified as the total population that has been sampled, which is the number of Canadian who is 18 years old or older.
+  As `survey data` is obtained from the survey conducted by CES, the sampling method of the survey has been taken into consideration. This is beneficial to reduce the errors to avoid inaccurate results when raining the logistic regression model. The finite population is specified as the total population that has been sampled, which is the number of Canadians who are 18 years old or older. [Wu & Thompson, 2020]
+Since all the predictors in the model are categorical, the quasi-binomial model could provide more accurate results compared to the binomial model. [Sinha, Das & Mukhoti, 2008]
 
-  After finalized the designed method, 6 different variables used in the model, `age_group`, `province`, `education`, `sex`, `marital_status` and `religion`. These 6 variables represents the voter's social and economics status, which is a miniature for the respondents' thought with the political issues and federal government. As all the variables included in the logistic model are categorical, `family = quasibinomial` is used in the logistic model training process. The logistic regression model used can be expressed as follows:
+  After finalized the designed method, 6 different variables used in the model, `age_group`, `province`, `education`, `sex`, `marital_status` and `religion`. These 6 variables represent the voter's social and economic status, which is a miniature for the respondents' thoughts on the political issues and federal government. As all the variables included in the logistic model are categorical, `family = quasibinomial` is used in the logistic model training process. The logistic regression model used can be expressed as follows:
 
 $$  log(\frac{p}{1-p}) = \beta_0 + \beta_{1} gender_{male} + \sum_{i = 2}^{13} \beta_i \space province_{i} + \sum_{j = 14}^{29}\beta_j\space age\_group_{j} + $$
 $$\sum_{l = 30}^{34} \beta_l\space edcation_{l} + \sum_{k = 35}^{39} \beta_k \space religion_{k} + \sum_{q= 40}^{45}\beta_q \space marital\_status + \epsilon$$
@@ -135,7 +136,7 @@ model <- svyglm(vote_liberal ~ province + age_group + sex +
 
 ### Additional Information
 
-  As the aim for this paper to estimate the supporting rate for Liberal Party when all eligible Canadian have voted, the accuracy of the model is worth to validate. I split the survey data into two, train and test datasets, with ratio 3:1. The training data is used to the train the logistic quasi-binomial model. Using the training dataset, the coefficients before each variable is calculated using the parametric method. The test dataset is used to test the accuracy of the model. Based on the predictor values of each observation in the test dataset, the model will give the calculated result of each observation whether they would vote for Liberal party or not. By comparing the calculated result with the original vote decision, the accuracy of the model is obtained. The accuracy of the model is conducive to deciding whether improvement with the logistic quasi-binomial model is required.
+  As the aim of this paper to estimate the supporting rate for Liberal Party when all eligible Canadian have voted, the accuracy of the model is worth validating. I split the survey data into two, train and test datasets, with a ratio of 3:1. The training data is used to train the logistic quasi-binomial model. Using the training dataset, the coefficients before each variable is calculated using the parametric method. The test dataset is used to test the accuracy of the model. Based on the predictor values of each observation in the test dataset, the model will give the calculated result of each observation whether they would vote for the Liberal party or not. By comparing the calculated result with the original vote decision, the accuracy of the model is obtained. The accuracy of the model is conducive to deciding whether improvement with the logistic quasi-binomial model is required. [James, Witten, Hastie, &amp; Tibshirani, 2017]
 
 
 
@@ -174,11 +175,11 @@ census_data %>%
 # Discussion
 
 ## Summary
-  During the election period, it is popular that many companies from different field would try to estimate the supporting rate for each party. In this paper, I build one logistic regression model with 6 categorical predictors, based on the CES survey data. After the logistic regression model is trained by the survey data, the census data is used in the model. Together with the post stratification method, I estimate the supporting rate for the Liberal Party, assuming all the qualified Canadians voted during 2019 Election. The estimated supporting rate for the Liberal Party $= 0.363$ .
+  During the election period, companies from different fields and journalists would try to estimate the supporting rate for each party. In this paper, I build one logistic regression model with 6 categorical predictors, based on the CES survey data. After the logistic regression model is trained by the survey data, the census data is used. Together with the post stratification method, I estimate the supporting rate for the Liberal Party, assuming all the qualified Canadians voted during the 2019 Election. The estimated supporting rate for the Liberal Party $= 0.363$ .
 
 ## Conclusions
   
-  In order to estimate the supporting rate for the Liberal Party when all eligible Canadian voted, I chose 6 predictors from different perspective. In the beginning of the variable choosing process, there is one more predictor `household_size`. However, due the subtle relationship between the response variable, this predictor is removed from the model. The other variable, `the satisfaction with the federal government` is also one intriguing variable. As the name of the variable indicates, this variable has a strong relationship with the response variable `vote_liberal`. The accuracy of predicting the test dataste is increasing significantly after adding this variable to the logistic regression model. However, as there is no matching variable in the GSS dataset, this variable could only be removed. Therefore, the final model is constructed by `province`, `age_group`, `sex`, `education`, `religion` and `marital`. 
+  To estimate the supporting rate for the Liberal Party when all eligible Canadian voted, I chose 6 predictors from a different perspective. At the beginning of the variable choosing process, there is one more predictor `household_size`. However, due to the subtle relationship between the response variable, this predictor is removed from the model. The other variable, `the satisfaction with the federal government` is also one intriguing variable. As the name of the variable indicates, this variable has a strong relationship with the response variable `vote_liberal`. The accuracy of predicting the test dataset is increasing significantly after adding this variable to the logistic regression model. However, as there is no matching variable in the GSS dataset, this variable could only be removed. Therefore, the final model is constructed by `province`, `age_group`, `sex`, `education`, `religion` and `marital`. 
   
 ```{r echo=FALSE}
 survey_data%>%group_by(vote_combine)%>%
@@ -226,76 +227,106 @@ x$byClass%>%kable(caption = "Result of Confusion Matrix")
 
 # Reference
 
-**1.** Data source: 2017 General Social Survey (GSS): Families Cycle 31, provided by Statistics Canada under the terms of the Data Liberation
+- Data source: 2017 General Social Survey (GSS): Families Cycle 31, provided by Statistics Canada under the terms of the Data Liberation
 
-**2.** Gss31_user_Guide of 2017 General Social Survey (GSS): Families Cycle 31 https://sda-artsci-utoronto-ca.myaccess.library.utoronto.ca/sdaweb/dli2/gss/gss31/gss31/more_doc/GSS31_User_Guide.pdf
+- Data source: Stephenson, Laura B., Allison Harell, Daniel Rubenson and Peter John Loewen. The 2019 Canadian Election Study – Online Collection. [dataset]
 
-**3.** Data source: Stephenson, Laura B., Allison Harell, Daniel Rubenson and Peter John Loewen. The 2019 Canadian Election Study – Online Collection. [dataset]
+- Wu, C., & Thompson, M. E. (2020). Sampling Theory and Practice (ICSA Book Series in Statistics) (1st ed. 2020 ed.). Springer.
 
-**4.** Wu, C., & Thompson, M. E. (2020). Sampling Theory and Practice (ICSA Book Series in Statistics) (1st ed. 2020 ed.). Springer.
+- James, G., Witten, D., Hastie, T., & Tibshirani, R. (2013). An Introduction to Statistical Learning: with Applications in R (Springer Texts in Statistics) (1st ed. 2013, Corr. 7th printing 2017 ed.). Springer.
 
-**5.** James, G., Witten, D., Hastie, T., & Tibshirani, R. (2013). An Introduction to Statistical Learning: with Applications in R (Springer Texts in Statistics) (1st ed. 2013, Corr. 7th printing 2017 ed.). Springer.
+- Sinha, B. K., Das, K. K., &amp; Mukhoti, S. K. (2008). On Some Aspects of Unbiased Estimation of Parameters in Quasi-Binomial Distributions. Communications in Statistics - Theory and Methods, 37(19), 3023-3028. doi:10.1080/03610920802162706
 
-**6.** Kennedy, L., Khanna, K., Simpson, D., &amp; Gelman, A. (2020). Using sex and gender in survey adjustment. doi:arXiv:2009.14401
+- Kennedy, L., Khanna, K., Simpson, D., &amp; Gelman, A. (2020). Using sex and gender in survey adjustment. doi:arXiv:2009.14401
 
-**7.** Safiya Umoja Noble. Algorithms of Oppression: How Search Engines Reinforce Racism. NYU Press, 2018.
+- Safiya Umoja Noble. Algorithms of Oppression: How Search Engines Reinforce Racism. NYU Press, 2018.
+
+- R Core Team (2020). R: A language and environment for statistical computing. R Foundation for
+  Statistical Computing, Vienna, Austria. URL https://www.R-project.org/.
+
+- Wickham et al., (2019). Welcome to the tidyverse. Journal of Open Source Software, 4(43),
+  1686, https://doi.org/10.21105/joss.01686
+  
+- T. Lumley (2020) "survey: analysis of complex survey samples". R package version 4.0.
+
+- Hadley Wickham (2007). Reshaping Data with the reshape Package. Journal of Statistical
+  Software, 21(12), 1-20. URL http://www.jstatsoft.org/v21/i12/.
+  
+- David Robinson, Alex Hayes and Simon Couch (2020). broom: Convert Statistical Objects into
+  Tidy Tibbles. R package version 0.7.2. https://CRAN.R-project.org/package=broom
+  
+- John Fox and Sanford Weisberg (2019). An {R} Companion to Applied Regression, Third Edition.
+  Thousand Oaks CA: Sage. URL: https://socialsciences.mcmaster.ca/jfox/Books/Companion/
+
+- Yihui Xie (2020). knitr: A General-Purpose Package for Dynamic Report Generation in R. R
+  package version 1.30.
+  
+- Max Kuhn (2020). caret: Classification and Regression Training. R package version 6.0-86.
+  https://CRAN.R-project.org/package=caret
+
+
+
+
 
 \newpage
+
 
 # Appendix
 
 
 ## Appendix A
 
-In this Appendix, the visualization for the survey and census data is presented below.
+The visualization for the survey and census data is presented below. The bar plots are used to present the frequency of each level for each variables. 
 
-```{r echo=FALSE}
-p4 <- survey_data%>%ggplot(aes(education, fill = education))+
+
+**Figure 2**: In this plot, the frequency of `education`, `religion`, `maritual status` in the CES data is shown.
+```{r echo=FALSE, fig.height=2.5}
+survey_data%>%ggplot(aes(education, fill = education))+
   geom_bar()+
   scale_fill_brewer(palette = "Blues")+
-  theme(axis.text.x=element_blank())
+  theme(axis.text.x=element_blank())+
+  labs(title = "Figure 2.A: Education in Survey Data")
 
-p5 <- survey_data%>%ggplot(aes(religion, fill = religion))+
+survey_data%>%ggplot(aes(religion, fill = religion))+
   geom_bar()+
   scale_fill_brewer(palette = "Blues")+
-  theme(axis.text.x=element_blank())
+  theme(axis.text.x=element_blank())+
+  labs(title = "Figure 2.B: Religion in Survey Data")
 
-p6 <- survey_data%>%ggplot(aes(marital, fill = marital))+
+survey_data%>%ggplot(aes(marital, fill = marital))+
   geom_bar()+
   scale_fill_brewer(palette = "Blues")+
-  theme(axis.text.x=element_blank())
+  theme(axis.text.x=element_blank())+
+  labs(title = "Figure 2.C: Marital Status in Survey Data")
 
-figure <- ggarrange( p4, p5, p6, 
-          ncol =1,align = "v")
 
-annotate_figure(figure,
-                bottom = text_grob("Figure 1: \n Visualizing Variables \n In Survey Data",
-                                   hjust = 1, x = 1, face = "bold", size = 10))
 ```
 
+\newpage
 
-```{r echo=FALSE}
-p4 <- census_detailed_data%>%ggplot(aes(education, fill = education))+
+**Figure 3**: In this plot, the frequency of `education`, `religion`, `maritual status` in the GSS data is shown.
+
+
+```{r echo=FALSE, fig.height=2.5}
+census_detailed_data%>%ggplot(aes(education, fill = education))+
   geom_bar()+
   scale_fill_brewer(palette = "Blues")+
-  theme(axis.text.x=element_blank())
+  theme(axis.text.x=element_blank())+
+  labs(title = "Figure 3.A: Education in Census Data")
 
-p5 <- census_detailed_data%>%ggplot(aes(religion, fill = religion))+
+census_detailed_data%>%ggplot(aes(religion, fill = religion))+
   geom_bar()+
   scale_fill_brewer(palette = "Blues")+
-  theme(axis.text.x=element_blank())
+  theme(axis.text.x=element_blank())+
+  labs(title = "Figure 3.B: Religion in Census Data")
 
-p6 <- census_detailed_data%>%ggplot(aes(marital, fill = marital))+
+census_detailed_data%>%ggplot(aes(marital, fill = marital))+
   geom_bar()+
   scale_fill_brewer(palette = "Blues")+
-  theme(axis.text.x=element_blank())
+  theme(axis.text.x=element_blank())+
+  labs(title = "Figure 3.C: Maritual Status in Census Data")
 
-figure <- ggarrange( p4, p5, p6, 
-          ncol =1,align = "v")
 
-annotate_figure(figure,
-                bottom = text_grob("Figure 2: \n Visualizing Variables \n In Census Data",
-                                   hjust = 1, x = 1, face = "bold", size = 10))
 ```
 
 \newpage
