@@ -1,0 +1,318 @@
+---
+title: "Towards a Estimation of Supporting Rate for Liberal Party"
+author: "Zhixing Hong"
+date: "12/15/2020"
+output:
+  pdf_document: default
+  html_document: default
+---
+# Abstract
+
+The purpose of this paper is to build and train a logistic regression model to calculate the 2019 Canadian election result. We also simulate the supporting rate for the Liberal Party, when assuming all the qualified Canadians all voted during the campaign period. Based on the survey data obtained from the Canadian Election Study (online survey) and the census data from 2017 General Social Study data, I applied the post stratification method to calculate the supporting rate for liberal party in 2019 Election. With 6 different categorical variables in the logistic model, we get a supporting rate close to the real supporting rate, indicating that the model is applicable.
+
+**Keywords:** 2019 Canadian Election, Canadian Election Study, General Social Survey(2017), Post-Stratification, Logistic Modeling, Logistic Regression, Supervised Learning, Parametric Statistical Learning, Confusion Table
+
+**code and data supporting this analysis is available at:** https://github.com/neverknowhen/2019-Canadian-Election-Study
+
+
+# Introduction
+
+  The supporting rate for each party, companies and even individuals is extremely important during the election period. Building a logistic regression model with post-stratification is a popular for people to conduct analysis on the supporting rate for each parties. With the post stratification technique, the estimated result could be applied to the census scale without too much data required. 
+  
+  During the 2019 Canadian Election, Liberal Party did win for the final seat. However, the supporting rate for the Liberal Party was lower than the Conservative Party. Nevertheless, comparing to the 2015 Canadian election, the supporting rate for the Liberal Party also decreased. The reasons behind this might be complicated as it involving different aspects. While the importance of predicting the supporting rate for the Liberal Party were shown. Therefore, this study is focusing on estimating the supporting rate for the Liberal Party during the 2019 Canada Election, assuming all the eligible Canadian participated in.
+  
+  There are two different datasets used in the paper to build the logistic regression model. The trained logistic regression model is then used for calculating the supporting rate of Liberal Party in 2019 Canadian Election. In the Methodology section (Section 2), the details about the data, the logistic regression model and post stratification are discussed. In the result section (Section 3), I discussed the supporting rate of 2019 Liberal Party obtained by the model. For the inference of the data and potential improvement for the model is mention in the Discussion Section(Section 4.) 
+
+```{r setup, include=FALSE}
+set.seed(1004882718)
+library(tidyverse)
+library(survey)
+library(reshape2)
+library(broom)
+library(car)
+library(knitr)
+library(caret)
+library(brms)
+library(ggpubr)
+
+# Loading in the cleaned survey data
+
+survey_data <- read_csv("~/Desktop/final_project//2019-Canadian-Election-Study/output/cleaned_online_data.csv")
+
+# Loading in the cleaned census data
+census_detailed_data <- read_csv("~/Desktop/final_project/2019-Canadian-Election-Study/output/cleaned_gss_data.csv")
+
+# Loading in the cell census data
+census_data <- read_csv("~/Desktop/final_project//2019-Canadian-Election-Study/output/census_cell_data.csv")
+```
+
+
+# Methodology
+
+## Data
+
+### General Information
+
+  There are two different datasets are used in the paper. 
+
+  The survey dataset, is a dataset obtained by Canadian Election Study (Short as CES) during the election campaign period time. 37822 respondents took the survey between September 13th to October 21st, 2019. The daily sample size is approximately 800 to 850 people; while the lase five days, there are a huge increase in the daily sample size, around 1600 respondent in average, per day. The survey is distributed online, and due to the design of the questionnaire, respondents are able to answer certain questions based on the choice for specific questions. There are 620 variables in the raw dataset, including some basic information about the respondent, the respondent's opinion and thought about political issues, and the respondent's vote decision. In order to make the prediction of the support rate for the Liberal Party when all eligible voter had been voted, I select some of the variables and clean those variables. 
+
+  For the data used to representing the census, data from 2017 General Social Study (Short as GSS) is reformatted and cleaned. The 2017 GSS is a sample survey with cross-sectional design. The target population are all non-institutionalized persons 15 years of age and older, living in the 10 provinces of Canada. The GSS conducted by telephone surveys to collect the response from people all over Canada. There are 460 questions included in the survey, which could be classified into 14 different categories. That includes the entry component, family origins, conjugal history, children of respondents, and so on. The variables that I select are similar to the variables selected from the survey dataset.
+  
+  
+### Data Cleaning and Data Preparation
+  The variables selected are: `province`, `gender`, `age`, `education`, `household_size`, `impoartance of religion`, `marital status`, and one more variable `vote_combine` from the sample data is also included. All the variables, except the `vote_choice`, are used as the predictor for the logistic regression model.
+  
+   
+   As the variable `province`, in the sample and census data indicates the living place of the respondents, I left the variable unchanged. In both datasets, I select the respondents at 18 years old or older, since the qualified voters in the Canadian Election must older or at 18 years old. After select the qualified voters, I create `age group` to replace `age`. This variable divides people into age groups which have similar characteristics and are more significant for the model. For each small age group, the difference between the upper bound and the lower bound is 5 years. In the CES data, `gender` is included, while `sex` is used in the GSS data. As suggested by Kennedy that there is difference between the definition with `sex` and `gender`, ignoring the difference is algorithmic injustice. Therefore, followed the sociological perspective, I combine the variable level `a woman` and `Other (e.g. Trans, non-binary, two-spirit, gender-queer)` together in the survey data. Then I renamed the predictor as `sex`. For the variable `education`, it originally had 12 levels in survey data set and 8 levels in the census data. To match this categorical variable, I combined several groups. The final `education` takes 6 levels. The `religion` is also an important feature for people to making voting choice during the election. Due the limitation of the datasets, I chose the `religion_importance` as the predictor variable. `Maritual status` in the survey data is keep same as given. I reformatted that predictor in the `census data`, which could be paired with the survey data. 
+   
+   As voting process have different stages during the 2019 Canadian Election, the vote choice in the survey data is not contained in the same variable. As there are people who voted in advance, people who willing and likely to vote during the voting period and also there are people who expressed that 'will not vote or not willing to vote'. Therefore, to have a variable that combining all different people's voting choice is crucial. Hence, `vote_combine` combined all the voting choice for all the respondents who took the survey. As the goal of the paper is to simulating the real supporting rate for Liberal PArty, if every eligible voter voted during the 2019 election, I add one more variable `vote_liberal`. This is a binary variable that demonstates whether the people voted for Liberal Party during the Advance voting, or the respondent had the intension to vote for Liberal Party.
+   
+   Here is the overview for the two datasets. The detailed information for the two datasets is in Appendix A.
+   
+```{r echo=FALSE}
+head(census_detailed_data)%>%
+  select(-household_size)%>%
+  kable(caption = "Cleaned Census Data (from 2017 GSS)")
+
+head(survey_data)%>%
+  select(-vote_2015, -imp_iss_party, -fed_gov_sat, -turnout_2015, -household_size)%>%
+  kable(caption = "Cleaned Survey Data (from 2019 CES)")
+```
+
+
+
+### Strength and Limitation for the Survey and Data
+
+  There are several strength for the survey data and census. First, the GSS survey took stratification as its sampling method. Based on the province information, the data is divided into strata, providing an unbiased sample. For the CES data, the dataset provided user several efficient way to remove the non-response problem. As the CES was conducting by online survey, there is time recorded for the respondent as they opened the survey and finished survey. Based on the time given, I am notified with the inattentive respondents and speeders.
+  
+  
+  For the GSS, there are many missing values in the data were imputed as “Not Stated” or “Don't Know”. While the assumption under which these imputations were conducted was probably reasonable, it may be able to adding more useful and important information to the census data. Moreover, the sample size for this survey is relatively small comparing to the survey dataset. Therefore we have to use `weight_person` to estimate the number of people fall in this category, which `weight_person` was calcutaed based on the census data on 2016 Canada Census. What is also worth to mentioning is that, CES was conducted online. Therefore, this makes an bias on the sample. All the respondents were defaulted to be the ones who had the access to the internet and who were able to finish the survey through computer.
+
+
+## Model
+```{r, include=FALSE}
+survey_data <- survey_data %>% 
+  mutate(vote_liberal = ifelse(vote_combine == "Conservative Party", 1, 0))
+
+n <- nrow(survey_data)
+training_indices <- sample(1:n, size = round(0.75 * n))
+train <- survey_data[training_indices,]
+test <- survey_data[-training_indices,]
+
+N <- 18350359
+```
+
+
+
+### Model Specifies
+
+  A logistic quasi-binomial regression model is employed to predict the supporting rate for the Liberal Party in 2019 Canadian Election, when all eligible Canadian voted.
+
+  As `survey data` is obtained from the survey conducted by CES, the sampling method of the survey has been taken into consideration. This is beneficial to reduce the errors to avoid inaccurate result when raining the logistic regression model. The finite population is specified as the total population that has been sampled, which is the number of Canadian who is 18 years old or older.
+
+  After finalized the designed method, 6 different variables used in the model, `age_group`, `province`, `education`, `sex`, `marital_status` and `religion`. These 6 variables represents the voter's social and economics status, which is a miniature for the respondents' thought with the political issues and federal government. As all the variables included in the logistic model are categorical, `family = quasibinomial` is used in the logistic model training process. The logistic regression model used can be expressed as follows:
+
+$$  log(\frac{p}{1-p}) = \beta_0 + \beta_{1} gender_{male} + \sum_{i = 2}^{13} \beta_i \space province_{i} + \sum_{j = 14}^{29}\beta_j\space age\_group_{j} + $$
+$$\sum_{l = 30}^{34} \beta_l\space edcation_{l} + \sum_{k = 35}^{39} \beta_k \space religion_{k} + \sum_{q= 40}^{45}\beta_q \space marital\_status + \epsilon$$
+
+  Where $p$ represents the proportion of voters who  would like to vote for Liberal Party. $\beta_0$ represents the intercept of the logistic regression model. Additionally, $\beta_m ( m \in [1, 45])$ represents the slope of each different variable, or each levels of the variables. For example, $\beta_{8}$ is the coefficient for the people from Ontario. The coefficients in the logistic regression model are not able to show the relationship between the variable and probability vote for Liberal Party directly, only if after the transformation. By applying the transformation on the coefficients, the general relationship is decreasing the log odds, increasing the real transformed coefficients. `R` software is used to build the logistic model and compute the model result.
+
+```{r echo=FALSE}
+fpc.srs <- rep(N, nrow(train))
+
+design <- svydesign(id=~1, data=train, fpc = fpc.srs)
+
+# Creating the Model
+model <- svyglm(vote_liberal ~ province + age_group + sex + 
+               education + religion  + marital ,
+            design, family= "quasibinomial")
+
+# Model Results (to Report in Results section)
+```
+
+
+
+### Additional Information
+
+  As the aim for this paper to estimate the supporting rate for Liberal Party when all eligible Canadian have voted, the accuracy of the model is worth to validate. I split the survey data into two, train and test datasets, with ratio 3:1. The training data is used to the train the logistic quasi-binomial model. Using the training dataset, the coefficients before each variable is calculated using the parametric method. The test dataset is used to test the accuracy of the model. Based on the predictor values of each observation in the test dataset, the model will give the calculated result of each observation whether they would vote for Liberal party or not. By comparing the calculated result with the original vote decision, the accuracy of the model is obtained. The accuracy of the model is conducive to deciding whether improvement with the logistic quasi-binomial model is required.
+
+
+
+# Results
+
+Here, the $\beta_0$ to $\beta_k$ represents the ‘estimated’ column of the table above, they are just coefficients of each variable, and according to the result of table3, it shows that most variables were negatively related to supporting Donald Trump in the 2020 election.
+
+The detailed information for the logistic quasi-binomial regression model can be view in Appendix B.
+
+  As the coefficients of the logistic model is the log-odds, I transferred the estimated value of each $\beta$ into the normal standard. Followed that, the new estimates values are used together with the census data to calculate the supporting rate for Liberal Party during 2019 Canadian Election, when all qualified Canadian participated in the voting. The obtained supporting rate for the Liberal Party $= 0.363$. The 95% confidence interval is $[0.3628, 0.3632]$. Here, to be more specified, 0 represents the people who would not like to vote for Liberal Party and 1 represents to those who support the Liberal Party. As $0.364$ is more closer to 0, that the rate for supporting the Liberal Party is not very high.
+
+```{r echo=FALSE}
+census_data <- census_data%>%rename(fed_gov_sat = feeling_lifes)%>% 
+  filter(! fed_gov_sat == "Don 't know/ Prefer not to answer") %>%
+  select(-fed_gov_sat, -household_size)
+
+# Here I will perform the post-stratification calculation
+census_data$logodds_estimate <-
+  model %>%
+  predict(newdata = census_data)
+
+census_data$estimate <-
+  exp(census_data$logodds_estimate)/(1+exp(census_data$logodds_estimate))
+
+census_data %>%
+  mutate(alp_predict_prop = estimate*weight) %>%
+  summarise(Liberal_Party_Supporting_Rate = sum(alp_predict_prop)/sum(weight))%>%kable()
+```
+
+
+ The estimated result, `prediction_result = 0.363` is a bit high than the real supporting rate during the 2019 Election. The real supporting rate for Liberal party is 34.3%. All the results are based off the post-stratification analysis of the proportion of voter leans Liberal Party. The logistic quasi-binomial model works with the survey method, with 6 categorical variables, `province`, `age_group`, `sex`, `education`, `marital`, `religious`.
+
+
+
+
+# Discussion
+
+## Summary
+  During the election period, it is popular that many companies from different field would try to estimate the supporting rate for each party. In this paper, I build one logistic regression model with 6 categorical predictors, based on the CES survey data. After the logistic regression model is trained by the survey data, the census data is used in the model. Together with the post stratification method, I estimate the supporting rate for the Liberal Party, assuming all the qualified Canadians voted during 2019 Election. The estimated supporting rate for the Liberal Party $= 0.363$ .
+
+## Conclusions
+  
+  In order to estimate the supporting rate for the Liberal Party when all eligible Canadian voted, I chose 6 predictors from different perspective. In the beginning of the variable choosing process, there is one more predictor `household_size`. However, due the subtle relationship between the response variable, this predictor is removed from the model. The other variable, `the satisfaction with the federal government` is also one intriguing variable. As the name of the variable indicates, this variable has a strong relationship with the response variable `vote_liberal`. The accuracy of predicting the test dataste is increasing significantly after adding this variable to the logistic regression model. However, as there is no matching variable in the GSS dataset, this variable could only be removed. Therefore, the final model is constructed by `province`, `age_group`, `sex`, `education`, `religion` and `marital`. 
+  
+```{r echo=FALSE}
+survey_data%>%group_by(vote_combine)%>%
+  filter(! fed_gov_sat == "Don't know/ Prefer not to answer")%>%
+  filter(! vote_combine == "Another party (please specify)")%>%
+  filter(! vote_combine == "I do not intend to vote")%>%
+  mutate( vote_combine = case_when(
+    str_detect(vote_combine, "Bloc") ~ "Bloc Quebecois",
+    TRUE ~ vote_combine))%>%
+  ggplot(aes(x= fed_gov_sat, fill = fed_gov_sat))+
+  geom_bar() +
+  facet_wrap(~ vote_combine, ncol = 2, scales = "free") + 
+  scale_fill_brewer(palette = "Blues")+
+  theme(axis.text.x=element_blank())+
+  labs(title = "Visulizaing Voting Choice and Statisfication with Fed",
+       caption="Figure 1")
+```
+  
+  The supporting rate for the Liberal Party was actually lower than that for the Conservative Party during the 2019 Canada Election. The real supporting rate for Liberal party is at 0.331, while that for the Conservative Party is 0.343. Based on our estimation, the 95% confidence interval is $[0.3628, 0.3632]$. All these estimated value is significantly higher than the real value. However, it is important to recall that winning party during the 2019 Canada Election was actually the Liberal Party. Therefore, it is reasonable to argue that the model can not only be used for estimating the supporting rate, but also is applicable for predicting the winning party (different from U.S election, the number of parties involved leading to the winning probability should not compare with 0.5).
+
+
+## Weakness and Next Steps
+
+  There are some limitations we found during the research. Firstly, it is the problem with the census data. Though GSS data has a weight variable with allowed me use as the weight during the post stratification process. The weight is still not accurate, as the weight is calculated based on the 2016 Canada Census data. There is three year gap between the survey data and census data. This adds errors to the model and influced the estimated value. Secondly, specificity of the logistic model is not as high as ideal. The model tends to mark more observations as not vote for Liberal, while those people's original response was vote for the Liberal Party. Though the overall accuracy for the model is above 70%, the specificity need to be improved.
+
+```{r echo=FALSE}
+test$logodds_estimate <-
+  model %>%
+  predict(newdata = test)
+
+test <- test%>%
+  mutate(logodds_estimat = predict(model, newdata = test),
+         estimate = predict(model, newdata = test, type = "response"),
+         test_result = as.factor(ifelse(estimate >= 0.5, 1, 0)),
+         vote_liberal = as.factor(ifelse(vote_combine == "Conservative Party", 1, 0)))
+
+x <- confusionMatrix(test$vote_liberal, test$test_result)
+
+x$byClass%>%kable(caption = "Result of Confusion Matrix")
+```
+
+  It is hoped that in the future work, the problem of the census data could be resolved. As more accurate the census data, more precise the model would estimate the supporting and winning rate for each party. It is also hoped that one can extend the model globally based on more global data. With more data used for training the model, the bias will be reduced.
+
+\newpage
+
+# Reference
+
+**1.** Data source: 2017 General Social Survey (GSS): Families Cycle 31, provided by Statistics Canada under the terms of the Data Liberation
+
+**2.** Gss31_user_Guide of 2017 General Social Survey (GSS): Families Cycle 31 https://sda-artsci-utoronto-ca.myaccess.library.utoronto.ca/sdaweb/dli2/gss/gss31/gss31/more_doc/GSS31_User_Guide.pdf
+
+**3.** Data source: Stephenson, Laura B., Allison Harell, Daniel Rubenson and Peter John Loewen. The 2019 Canadian Election Study – Online Collection. [dataset]
+
+**4.** Wu, C., & Thompson, M. E. (2020). Sampling Theory and Practice (ICSA Book Series in Statistics) (1st ed. 2020 ed.). Springer.
+
+**5.** James, G., Witten, D., Hastie, T., & Tibshirani, R. (2013). An Introduction to Statistical Learning: with Applications in R (Springer Texts in Statistics) (1st ed. 2013, Corr. 7th printing 2017 ed.). Springer.
+
+**6.** Kennedy, L., Khanna, K., Simpson, D., &amp; Gelman, A. (2020). Using sex and gender in survey adjustment. doi:arXiv:2009.14401
+
+**7.** Safiya Umoja Noble. Algorithms of Oppression: How Search Engines Reinforce Racism. NYU Press, 2018.
+
+\newpage
+
+# Appendix
+
+
+## Appendix A
+
+In this Appendix, the visualization for the survey and census data is presented below.
+
+```{r echo=FALSE}
+p4 <- survey_data%>%ggplot(aes(education, fill = education))+
+  geom_bar()+
+  scale_fill_brewer(palette = "Blues")+
+  theme(axis.text.x=element_blank())
+
+p5 <- survey_data%>%ggplot(aes(religion, fill = religion))+
+  geom_bar()+
+  scale_fill_brewer(palette = "Blues")+
+  theme(axis.text.x=element_blank())
+
+p6 <- survey_data%>%ggplot(aes(marital, fill = marital))+
+  geom_bar()+
+  scale_fill_brewer(palette = "Blues")+
+  theme(axis.text.x=element_blank())
+
+figure <- ggarrange( p4, p5, p6, 
+          ncol =1,align = "v")
+
+annotate_figure(figure,
+                bottom = text_grob("Figure 1: \n Visualizing Variables \n In Survey Data",
+                                   hjust = 1, x = 1, face = "bold", size = 10))
+```
+
+
+```{r echo=FALSE}
+p4 <- census_detailed_data%>%ggplot(aes(education, fill = education))+
+  geom_bar()+
+  scale_fill_brewer(palette = "Blues")+
+  theme(axis.text.x=element_blank())
+
+p5 <- census_detailed_data%>%ggplot(aes(religion, fill = religion))+
+  geom_bar()+
+  scale_fill_brewer(palette = "Blues")+
+  theme(axis.text.x=element_blank())
+
+p6 <- census_detailed_data%>%ggplot(aes(marital, fill = marital))+
+  geom_bar()+
+  scale_fill_brewer(palette = "Blues")+
+  theme(axis.text.x=element_blank())
+
+figure <- ggarrange( p4, p5, p6, 
+          ncol =1,align = "v")
+
+annotate_figure(figure,
+                bottom = text_grob("Figure 2: \n Visualizing Variables \n In Census Data",
+                                   hjust = 1, x = 1, face = "bold", size = 10))
+```
+
+\newpage
+
+## Appedix B
+  The detailed model information is presented as below. The estimates for each variables are the log-odds from the logistic regression model.
+
+```{r echo=FALSE}
+kable(summary(model)$coefficient, caption = "Logistic Regression Model Result")
+```
+
+\newpage
+
+
+## Appedix C
+  Here is the variance inflation factor(short for VIF) of the variables that are included in the logistic regression model. From the variance inflation factor table, it is clear to notice that all the variables included in the model does not have a strong correlation, as the VIF are below the threshold 5. Therefore, the model statisfies the model assumption.
+```{r echo=FALSE}
+vif(model)%>%kable(caption = "Variance Inflaction Factor for Predictors")
+```
+
